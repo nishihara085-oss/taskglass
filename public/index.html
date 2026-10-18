@@ -136,6 +136,244 @@ li.swipe-left {
 @media(prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation:none!important; transition:none!important; }
 }
+
+/* Clean white design */
+:root {
+  color: #202938;
+  background: #f7f8fa;
+}
+
+body {
+  background: #f7f8fa;
+  color: #202938;
+}
+
+main {
+  max-width: 760px;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #e8ebf0;
+  box-shadow: 0 8px 28px rgba(25, 40, 65, 0.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.add {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.filter.active {
+  background: #eaf1ff;
+  color: #1d4ed8;
+}
+
+#taskInput {
+  background: #ffffff;
+  border: 1px solid #d9dee8;
+  color: #202938;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #93b4ff;
+  outline-offset: 2px;
+}
+
+/* Task cards */
+#taskList > li {
+  display: block;
+  padding: 14px;
+  margin: 10px 0;
+  border: 1px solid #e7eaf0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(25, 40, 65, 0.03);
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.task-menu {
+  max-width: 150px;
+  padding: 9px;
+  border: 1px solid #d9dee8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #344054;
+  font: inherit;
+}
+
+.subtask-details {
+  margin: 12px 0 0 32px;
+  border-top: 1px solid #edf0f5;
+  padding-top: 10px;
+}
+
+.subtask-details summary {
+  cursor: pointer;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 0;
+}
+
+.subtask-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border-radius: 10px;
+  background: #f7f9fc;
+}
+
+.subtask-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: #2563eb;
+  flex-shrink: 0;
+}
+
+.subtask-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.subtask-row.is-done .subtask-name {
+  color: #8a94a5;
+  text-decoration: line-through;
+}
+
+.subtask-add {
+  width: 100%;
+  margin-top: 8px;
+  background: #edf4ff;
+  color: #1d4ed8;
+  text-align: left;
+  font-size: 14px;
+}
+
+.task-progress {
+  margin: 8px 0 0 32px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .task-menu {
+    max-width: 125px;
+    font-size: 12px;
+  }
+
+  .subtask-details {
+    margin-left: 8px;
+  }
+}
+
+
+/* Swipe actions: Mail / Slack style */
+#taskList > li {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 16px;
+  isolation: isolate;
+}
+
+.task-card-content {
+  position: relative;
+  z-index: 1;
+  padding: 14px;
+  border-radius: 15px;
+  background: #fff;
+  transition: transform 180ms ease;
+  touch-action: pan-y;
+}
+
+.task-card-content.is-dragging {
+  transition: none;
+}
+
+.swipe-action {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.swipe-action span:first-child {
+  font-size: 22px;
+}
+
+.swipe-delete {
+  right: 0;
+  background: #dc3545;
+}
+
+.swipe-complete {
+  left: 0;
+  background: #16845b;
+}
+
+#taskList > li.swipe-open-left .task-card-content {
+  transform: translateX(-100px);
+}
+
+#taskList > li.swipe-open-right .task-card-content {
+  transform: translateX(100px);
+}
+
+.task-card-content .task-row {
+  min-width: 0;
+}
+
+.task-card-content .task {
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card-content {
+    transition: none;
+  }
+}
 </style>
 </head>
 <body>
@@ -193,111 +431,395 @@ function save() {
   localStorage.setItem("glass-task-items", JSON.stringify(tasks));
   render();
 }
+
 function render() {
   const list = $("taskList");
   list.replaceChildren();
-  const visible = tasks.filter(t =>
-    filter === "all" || (filter === "open" && !t.done) ||
-    (filter === "done" && t.done)
+
+  // 古いタスクデータにも詳細タスク欄を用意する
+  tasks.forEach(task => {
+    if (!Array.isArray(task.subtasks)) task.subtasks = [];
+  });
+
+  const visible = tasks.filter(task =>
+    filter === "all" ||
+    (filter === "open" && !task.done) ||
+    (filter === "done" && task.done)
   );
-  $("count").textContent = `未完了 ${tasks.filter(t=>!t.done).length}`;
+
+  const openCount = tasks.filter(task => !task.done).length;
+  $("count").textContent = `未完了 ${openCount}件`;
   $("empty").hidden = visible.length > 0;
+
   visible.forEach(task => {
     const li = document.createElement("li");
     li.dataset.taskId = task.id;
     if (task.done) li.classList.add("done");
+
+    const row = document.createElement("div");
+    row.className = "task-row";
+
     const check = document.createElement("button");
-    check.className = "check";
     check.type = "button";
+    check.className = "check";
     check.textContent = task.done ? "✓" : "";
-    check.setAttribute("aria-label", task.done ? "未完了に戻す" : "完了にする");
+    check.setAttribute(
+      "aria-label",
+      task.done ? "未完了に戻す" : "完了にする"
+    );
+
     check.onclick = () => {
       task.done = !task.done;
+      task.subtasks.forEach(subtask => {
+        subtask.done = task.done;
+      });
       save();
     };
-    const text = document.createElement("span");
-    text.className = "task";
-    text.textContent = task.text;
-    const del = document.createElement("button");
-    del.className = "delete";
-    del.type = "button";
-    del.textContent = "削除";
-    del.onclick = () => {
-      tasks = tasks.filter(t => t.id !== task.id);
-      save();
+
+    const name = document.createElement("span");
+    name.className = "task";
+    name.textContent = task.text;
+
+    const actions = document.createElement("div");
+    actions.className = "task-actions";
+
+    const menu = document.createElement("select");
+    menu.className = "task-menu";
+    menu.setAttribute("aria-label", `${task.text}の操作`);
+
+    [
+      ["", "操作"],
+      ["add", "＋ 詳細を追加"],
+      ["rename", "名前を変更"],
+      ["delete", "タスクを削除"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      menu.append(option);
+    });
+
+    menu.onchange = () => {
+      const action = menu.value;
+      menu.value = "";
+
+      if (action === "add") {
+        const value = prompt("追加する詳細タスクを入力してください");
+        if (value && value.trim()) {
+          task.subtasks.push({
+            id: crypto.randomUUID(),
+            text: value.trim(),
+            done: false
+          });
+          save();
+        }
+      }
+
+      if (action === "rename") {
+        const value = prompt("新しいタスク名", task.text);
+        if (value && value.trim()) {
+          task.text = value.trim();
+          save();
+        }
+      }
+
+      if (action === "delete") {
+        if (confirm(`「${task.text}」を削除しますか？`)) {
+          tasks = tasks.filter(item => item.id !== task.id);
+          save();
+        }
+      }
     };
-    li.append(check, text, del);
+
+    actions.append(menu);
+    row.append(check, name, actions);
+    li.append(row);
+
+    if (task.subtasks.length > 0) {
+      const completed = task.subtasks.filter(item => item.done).length;
+
+      const progress = document.createElement("div");
+      progress.className = "task-progress";
+      progress.textContent =
+        `詳細タスク ${completed} / ${task.subtasks.length} 完了`;
+
+      const details = document.createElement("details");
+      details.className = "subtask-details";
+      details.open = false;
+
+      const summary = document.createElement("summary");
+      summary.textContent = "詳細タスクを表示";
+
+      const subtaskList = document.createElement("div");
+      subtaskList.className = "subtask-list";
+
+      task.subtasks.forEach(subtask => {
+        const subrow = document.createElement("div");
+        subrow.className = "subtask-row";
+        if (subtask.done) subrow.classList.add("is-done");
+
+        const subcheck = document.createElement("input");
+        subcheck.type = "checkbox";
+        subcheck.checked = !!subtask.done;
+        subcheck.setAttribute(
+          "aria-label",
+          `${subtask.text}を完了にする`
+        );
+
+        subcheck.onchange = () => {
+          subtask.done = subcheck.checked;
+          task.done =
+            task.subtasks.length > 0 &&
+            task.subtasks.every(item => item.done);
+          save();
+        };
+
+        const subname = document.createElement("span");
+        subname.className = "subtask-name";
+        subname.textContent = subtask.text;
+
+        const submenu = document.createElement("select");
+        submenu.className = "task-menu";
+        submenu.setAttribute(
+          "aria-label",
+          `${subtask.text}の操作`
+        );
+
+        [
+          ["", "操作"],
+          ["rename", "名前を変更"],
+          ["delete", "削除"]
+        ].forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          submenu.append(option);
+        });
+
+        submenu.onchange = () => {
+          const action = submenu.value;
+          submenu.value = "";
+
+          if (action === "rename") {
+            const value = prompt("詳細タスクの名前", subtask.text);
+            if (value && value.trim()) {
+              subtask.text = value.trim();
+              save();
+            }
+          }
+
+          if (action === "delete") {
+            if (confirm(`「${subtask.text}」を削除しますか？`)) {
+              task.subtasks = task.subtasks.filter(
+                item => item.id !== subtask.id
+              );
+              task.done =
+                task.subtasks.length > 0 &&
+                task.subtasks.every(item => item.done);
+              save();
+            }
+          }
+        };
+
+        subrow.append(subcheck, subname, submenu);
+        subtaskList.append(subrow);
+      });
+
+      const addButton = document.createElement("button");
+      addButton.type = "button";
+      addButton.className = "subtask-add";
+      addButton.textContent = "＋ 詳細タスクを追加";
+
+      addButton.onclick = () => {
+        const value = prompt("追加する詳細タスクを入力してください");
+        if (value && value.trim()) {
+          task.subtasks.push({
+            id: crypto.randomUUID(),
+            text: value.trim(),
+            done: false
+          });
+          save();
+        }
+      };
+
+      details.append(summary, subtaskList, addButton);
+      li.append(progress, details);
+    } else {
+      const addButton = document.createElement("button");
+      addButton.type = "button";
+      addButton.className = "subtask-add";
+      addButton.textContent = "＋ 詳細タスクを追加";
+
+      addButton.onclick = () => {
+        const value = prompt("追加する詳細タスクを入力してください");
+        if (value && value.trim()) {
+          task.subtasks.push({
+            id: crypto.randomUUID(),
+            text: value.trim(),
+            done: false
+          });
+          save();
+        }
+      };
+
+      li.append(addButton);
+    }
+
+    const deleteAction = document.createElement("button");
+    deleteAction.type = "button";
+    deleteAction.className = "swipe-action swipe-delete";
+    deleteAction.innerHTML = "<span>🗑</span><span>削除</span>";
+    deleteAction.setAttribute("aria-label", "タスクを削除");
+    deleteAction.onclick = () => {
+      if (!confirm("このタスクを削除しますか？")) return;
+      tasks = tasks.filter(item => item.id !== task.id);
+      save();
+      render();
+    };
+
+    const completeAction = document.createElement("button");
+    completeAction.type = "button";
+    completeAction.className = "swipe-action swipe-complete";
+    completeAction.innerHTML = "<span>✓</span><span>完了</span>";
+    completeAction.setAttribute("aria-label", "タスクを完了");
+    completeAction.onclick = () => {
+      task.done = !task.done;
+      save();
+      render();
+    };
+
+    const cardContent = document.createElement("div");
+    cardContent.className = "task-card-content";
+    while (li.firstChild) {
+      cardContent.append(li.firstChild);
+    }
+    li.append(deleteAction, completeAction, cardContent);
     list.append(li);
   });
-  document.querySelectorAll(".filter").forEach(b =>
-    b.classList.toggle("active", b.dataset.filter === filter)
-  );
+
+  document.querySelectorAll(".filter").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.filter === filter
+    );
+  });
 }
-// Horizontal swipe gestures for task cards
+
+// Swipe actions
 const taskList = $("taskList");
 let swipeStart = null;
 
+function closeSwipeCards(except = null) {
+  taskList.querySelectorAll("li.swipe-open-left, li.swipe-open-right")
+    .forEach(li => {
+      if (li !== except) {
+        li.classList.remove("swipe-open-left", "swipe-open-right");
+        const content = li.querySelector(".task-card-content");
+        if (content) content.style.transform = "";
+      }
+    });
+}
+
 taskList.addEventListener("pointerdown", e => {
   const li = e.target.closest("li");
-  if (!li || e.target.closest("button")) {
-    swipeStart = null;
-    return;
-  }
+  if (!li || !taskList.contains(li)) return;
+
+  if (e.target.closest("button, select, input, summary")) return;
+
+  const content = li.querySelector(".task-card-content");
+  if (!content) return;
+
+  closeSwipeCards(li);
 
   swipeStart = {
-    id: li.dataset.taskId,
+    li,
+    content,
     x: e.clientX,
-    y: e.clientY
+    y: e.clientY,
+    dx: 0,
+    pointerId: e.pointerId,
+    dragging: false
   };
 });
 
-taskList.addEventListener("pointerup", e => {
-  if (!swipeStart) return;
+window.addEventListener("pointermove", e => {
+  if (!swipeStart || e.pointerId !== swipeStart.pointerId) return;
 
-  const start = swipeStart;
+  const s = swipeStart;
+  const dx = e.clientX - s.x;
+  const dy = e.clientY - s.y;
+
+  if (!s.dragging) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+      swipeStart = null;
+      return;
+    }
+
+    if (Math.abs(dx) < 6) return;
+
+    s.dragging = true;
+    s.content.classList.add("is-dragging");
+  }
+
+  // 最大100pxまでカードを動かす
+  s.dx = Math.max(-100, Math.min(100, dx));
+  s.content.style.transform = `translateX(${s.dx}px)`;
+});
+
+function finishSwipe(e) {
+  if (!swipeStart || e.pointerId !== swipeStart.pointerId) return;
+
+  const s = swipeStart;
   swipeStart = null;
 
-  const dx = e.clientX - start.x;
-  const dy = e.clientY - start.y;
+  s.content.classList.remove("is-dragging");
 
-  // Ignore taps and vertical scrolling
-  if (Math.abs(dx) < 75 || Math.abs(dx) < Math.abs(dy) * 1.3) {
+  if (!s.dragging || Math.abs(s.dx) < 65) {
+    s.content.style.transform = "";
+    s.li.classList.remove("swipe-open-left", "swipe-open-right");
     return;
   }
 
-  const task = tasks.find(t => t.id === start.id);
-  const li = [...taskList.children].find(
-    el => el.dataset.taskId === start.id
-  );
+  closeSwipeCards(s.li);
 
-  if (!task || !li) return;
-
-  if (dx > 0) {
-    // Swipe right: complete or reopen
-    task.done = !task.done;
-    li.classList.add("swipe-right");
-    save();
+  if (s.dx < 0) {
+    s.li.classList.remove("swipe-open-right");
+    s.li.classList.add("swipe-open-left");
+    s.content.style.transform = "";
   } else {
-    // Swipe left: confirm before deleting
-    li.classList.add("swipe-left");
+    s.li.classList.remove("swipe-open-left");
+    s.li.classList.add("swipe-open-right");
+    s.content.style.transform = "";
+  }
+}
 
-    if (confirm(`「${task.text}」を削除しますか？`)) {
-      tasks = tasks.filter(t => t.id !== task.id);
-      save();
-    } else {
-      li.classList.remove("swipe-left");
-    }
+window.addEventListener("pointerup", finishSwipe);
+
+window.addEventListener("pointercancel", () => {
+  if (!swipeStart) return;
+
+  swipeStart.content.classList.remove("is-dragging");
+  swipeStart.content.style.transform = "";
+  swipeStart = null;
+});
+
+document.addEventListener("click", e => {
+  if (!e.target.closest("#taskList")) {
+    closeSwipeCards();
   }
 });
 
-taskList.addEventListener("pointercancel", () => {
-  swipeStart = null;
-});
+
 $("taskForm").addEventListener("submit", e => {
   e.preventDefault();
   const text = input.value.trim();
   if (!text) { input.focus(); return; }
-  tasks.unshift({id: crypto.randomUUID(), text, done:false});
+  tasks.unshift({
+  id: crypto.randomUUID(),
+  text,
+  done: false,
+  subtasks: []
+});
   input.value = "";
   save();
   input.focus();
